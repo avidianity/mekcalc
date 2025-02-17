@@ -100,3 +100,66 @@ export function calculateExhaustCenterline(EVC: number, exhaustDuration: number)
 export function calculateOverlap(IVO: number, EVC: number) {
 	return IVO + EVC;
 }
+
+export function calculateTireCircumference(
+	width: number,
+	aspectRatio: number,
+	rimDiameter: number
+): number {
+	// Convert rim diameter from inches to mm
+	const rimDiameterMM = rimDiameter * 25.4;
+
+	// Calculate sidewall height
+	const sidewallHeight = (aspectRatio / 100) * width;
+
+	// Calculate total tire diameter
+	const totalDiameter = rimDiameterMM + 2 * sidewallHeight;
+
+	// Calculate circumference using C = π × D
+	return Math.PI * totalDiameter;
+}
+
+export function calculateSpeed(
+	rpm: number,
+	frontSprocket: number,
+	rearSprocket: number,
+	gearRatio: number,
+	driveRatio: number,
+	circumference: number
+): number {
+	// Compute total transmission ratio, including the drive ratio
+	const totalTransmissionRatio = (rearSprocket / frontSprocket) * gearRatio * driveRatio;
+
+	// Compute wheel RPM (engine RPM divided by the transmission ratio)
+	const wheelRPM = rpm / totalTransmissionRatio;
+
+	// Convert circumference from mm to meters (divide by 1000)
+	const circumferenceMeters = circumference / 1000; // now in meters
+
+	// Calculate speed in meters per minute
+	const speedMetersPerMinute = wheelRPM * circumferenceMeters;
+
+	// Convert to kilometers per hour (multiply by 60 to get minutes to hours, then divide by 1000 to convert meters to kilometers)
+	const speedKilometersPerHour = (speedMetersPerMinute * 60) / 1000;
+
+	if (isNaN(speedKilometersPerHour)) {
+		return 0;
+	}
+
+	return Number(speedKilometersPerHour.toFixed(0));
+}
+
+export function generateRPMColumns(maximumRPM: number): number[] {
+	if (maximumRPM <= 0) {
+		return [];
+	}
+
+	const increment = maximumRPM / 10;
+	const rpmColumn: number[] = [];
+
+	for (let rpm = 0; rpm <= maximumRPM; rpm += increment) {
+		rpmColumn.push(Number(rpm.toFixed(0)));
+	}
+
+	return rpmColumn;
+}

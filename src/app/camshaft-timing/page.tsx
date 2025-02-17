@@ -16,7 +16,7 @@ import {
 } from '@/lib/number';
 import { useMemo } from 'react';
 
-export default function GasketVolume() {
+export default function CamshaftTiming() {
 	const [ivo, setIvo] = useNumber();
 	const [ivc, setIvc] = useNumber();
 	const [evo, setEvo] = useNumber();
