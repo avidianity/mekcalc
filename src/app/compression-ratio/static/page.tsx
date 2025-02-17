@@ -1,18 +1,97 @@
 'use client';
 
 import Back from '@/components/back';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card';
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useNumber } from '@/hooks/number';
+import { database } from '@/lib/firebase';
 import { calculateDisplacement, calculateStaticCompressionRatio } from '@/lib/number';
-import { useMemo } from 'react';
+import { yup } from '@/lib/yup';
+import { useAuth } from '@/store/auth';
+import { addDoc, collection, getDocs, onSnapshot, query } from 'firebase/firestore';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+
+const validator = yup.object({
+	cylinders: yup.number().required().min(1),
+	bore: yup.number().required().min(1),
+	stroke: yup.number().required().min(1),
+	unsweptVolume: yup.number().required().min(1),
+});
+
+const itemValidator = yup
+	.array(
+		validator.concat(
+			yup.object({
+				id: yup.string().required(),
+				name: yup.string().required(),
+			})
+		)
+	)
+	.required();
+
+const presetValidator = yup.string().required();
 
 export default function Static() {
 	const [cylinders, setCylinders] = useNumber(1);
 	const [bore, setBore] = useNumber();
 	const [stroke, setStroke] = useNumber();
 	const [unsweptVolume, setUnsweptVolume] = useNumber();
+	const user = useAuth((state) => state.user);
+	const [name, setName] = useState('');
+	const [open, setOpen] = useState(false);
+	const [saving, setSaving] = useState(false);
+	const [items, setItems] = useState<yup.InferType<typeof itemValidator>>([]);
+
+	const key = `users/${user?.id}/static-compression-ratio`;
+	const table = collection(database, key);
+
+	const save = async () => {
+		setSaving(true);
+		try {
+			await addDoc(table, data);
+
+			toast('Data saved successfully!');
+			setOpen(false);
+		} catch (error) {
+			console.error(error);
+			toast('Unable to save data');
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const fetchItems = async () => {
+		try {
+			const { docs } = await getDocs(query(table));
+
+			const raw = docs.map((doc) => ({
+				id: doc.id,
+				...doc.data(),
+			}));
+
+			setItems(await itemValidator.validate(raw));
+		} catch (error) {
+			console.error(error);
+		}
+	};
 
 	const displacement = useMemo(
 		() => calculateDisplacement(bore, stroke, cylinders),
@@ -28,6 +107,45 @@ export default function Static() {
 
 		return result;
 	}, [displacement, unsweptVolume]);
+
+	const data = useMemo(
+		() => ({
+			name,
+			cylinders,
+			bore,
+			stroke,
+			unsweptVolume,
+		}),
+		[name, cylinders, bore, stroke, unsweptVolume]
+	);
+
+	useEffect(() => {
+		if (!open) {
+			setName('');
+		}
+	}, [open]);
+
+	useEffect(() => {
+		const unsubscribe = onSnapshot(
+			table, // Replace with your collection name
+			async (snapshot) => {
+				const raw = snapshot.docs.map((doc) => ({
+					id: doc.id,
+					...doc.data(),
+				}));
+
+				setItems(await itemValidator.validate(raw));
+			}
+		);
+
+		return () => {
+			unsubscribe();
+		};
+	}, []);
+
+	useEffect(() => {
+		fetchItems();
+	}, []);
 
 	return (
 		<div className='h-full w-full flex items-center justify-center'>
@@ -86,6 +204,48 @@ export default function Static() {
 						</div>
 					</div>
 				</CardContent>
+				{user ? (
+					<CardFooter className='flex gap-1'>
+						<Dialog open={open} onOpenChange={setOpen}>
+							<DialogTrigger asChild>
+								<Button type='button' variant='outline' disabled={!validator.isValidSync(data)}>
+									Save
+								</Button>
+							</DialogTrigger>
+							<DialogContent>
+								<form
+									onSubmit={(e) => {
+										e.preventDefault();
+										save();
+									}}
+								>
+									<DialogHeader>
+										<DialogTitle>Save Data</DialogTitle>
+									</DialogHeader>
+									<div className='grid gap-4 py-4'>
+										<div className='flex flex-col gap-4'>
+											<Label htmlFor='name'>Name</Label>
+											<Input
+												id='name'
+												value={name}
+												onChange={(e) => setName(e.target.value)}
+												disabled={saving}
+											/>
+										</div>
+									</div>
+									<DialogFooter>
+										<Button type='submit' disabled={!presetValidator.isValidSync(name) || saving}>
+											Save
+										</Button>
+									</DialogFooter>
+								</form>
+							</DialogContent>
+						</Dialog>
+						<Button type='button' variant='outline'>
+							Load
+						</Button>
+					</CardFooter>
+				) : null}
 			</Card>
 		</div>
 	);

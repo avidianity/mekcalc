@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import '@/app/globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import ThemeToggle from '@/components/theme-toggle';
+import AuthButton from '@/components/auth/auth-button';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -30,15 +33,21 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased md:h-screen relative`}
 			>
-				<ThemeProvider
-					attribute='class'
-					defaultTheme='system'
-					enableSystem
-					disableTransitionOnChange
-				>
-					<ThemeToggle />
-					{children}
-				</ThemeProvider>
+				<TooltipProvider>
+					<ThemeProvider
+						attribute='class'
+						defaultTheme='system'
+						enableSystem
+						disableTransitionOnChange
+					>
+						<div className='fixed top-1 right-1 flex items-center justify-center gap-2'>
+							<ThemeToggle />
+							<AuthButton />
+						</div>
+						{children}
+					</ThemeProvider>
+				</TooltipProvider>
+				<Toaster />
 			</body>
 		</html>
 	);
