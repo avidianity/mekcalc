@@ -5,7 +5,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Button } from '@/components/ui/button';
 import {
 	DialogHeader,
-	DialogFooter,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -62,7 +61,7 @@ export default function AuthButton() {
 		});
 
 		return () => unsubscribe();
-	}, []);
+	}, [setUser]);
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>

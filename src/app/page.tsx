@@ -1,6 +1,5 @@
 import Menu from '@/components/menu';
 import { Button } from '@/components/ui/button';
-import { calculateSpeed, calculateTireCircumference } from '@/lib/number';
 import { Circle, Cog, Cylinder, Gauge, Omega } from 'lucide-react';
 import Link from 'next/link';
 
