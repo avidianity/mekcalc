@@ -1,9 +1,21 @@
 'use client';
 
 import Back from '@/components/back';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import DeleteDialog from '@/components/dialogs/DeleteDialog';
+import LoadDialog from '@/components/dialogs/LoadDialog';
+import SaveDialog from '@/components/dialogs/SaveDialog';
+import { Button } from '@/components/ui/button';
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useFirestoreItems } from '@/hooks/firestore';
 import { useNumber } from '@/hooks/number';
 import {
 	calculateDisplacement,
@@ -11,7 +23,28 @@ import {
 	calculateEffectiveStroke,
 	calculateStaticCompressionRatio,
 } from '@/lib/number';
-import { useMemo } from 'react';
+import { yup } from '@/lib/yup';
+import { useAuth } from '@/store/auth';
+import { useCallback, useMemo, useState } from 'react';
+
+const validator = yup.object({
+	cylinders: yup.number().required().min(1),
+	bore: yup.number().required().min(1),
+	stroke: yup.number().required().min(1),
+	unsweptVolume: yup.number().required().min(1),
+	ivcAngle: yup.number().required().min(1),
+});
+
+const itemValidator = yup
+	.array(
+		validator.concat(
+			yup.object({
+				id: yup.string().required(),
+				name: yup.string().required(),
+			})
+		)
+	)
+	.required();
 
 export default function Dynamic() {
 	const [cylinders, setCylinders] = useNumber(1);
@@ -19,6 +52,56 @@ export default function Dynamic() {
 	const [stroke, setStroke] = useNumber();
 	const [unsweptVolume, setUnsweptVolume] = useNumber();
 	const [ivcAngle, setIvcAngle] = useNumber();
+	const user = useAuth((state) => state.user);
+	const [saveOpen, setSaveOpen] = useState(false);
+	const [loadOpen, setLoadOpen] = useState(false);
+	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [itemId, setItemId] = useState<string | null>(null);
+
+	const collectionPath = `users/${user?.id}/dynamic-compression-ratio`;
+
+	const { items } = useFirestoreItems(collectionPath, itemValidator.validate.bind(itemValidator));
+
+	const clear = () => {
+		setCylinders(1);
+		setBore(0);
+		setStroke(0);
+		setUnsweptVolume(0);
+		setIvcAngle(0);
+		setItemId(null);
+	};
+
+	const load = useCallback(
+		(loadItemId: string) => {
+			const item = items.find((item) => item.id === loadItemId);
+
+			if (!item) {
+				return;
+			}
+
+			setCylinders(item.cylinders);
+			setBore(item.bore);
+			setStroke(item.stroke);
+			setUnsweptVolume(item.unsweptVolume);
+			setIvcAngle(item.ivcAngle);
+
+			setLoadOpen(false);
+			setDeleteOpen(false);
+			setItemId(item.id);
+		},
+		[items, setCylinders, setBore, setStroke, setUnsweptVolume, setIvcAngle]
+	);
+
+	const data = useMemo(
+		() => ({
+			cylinders,
+			bore,
+			stroke,
+			unsweptVolume,
+			ivcAngle,
+		}),
+		[cylinders, bore, stroke, unsweptVolume, ivcAngle]
+	);
 
 	const displacement = useMemo(
 		() => calculateDisplacement(bore, stroke, cylinders),
@@ -114,6 +197,40 @@ export default function Dynamic() {
 						</div>
 					</div>
 				</CardContent>
+				{user ? (
+					<CardFooter className='flex gap-1'>
+						<SaveDialog
+							isOpen={saveOpen}
+							onOpenChange={setSaveOpen}
+							data={data}
+							itemId={itemId}
+							collectionPath={collectionPath}
+							isValid={validator.isValidSync(data)}
+						/>
+						<LoadDialog isOpen={loadOpen} onOpenChange={setLoadOpen} items={items} onLoad={load} />
+						{itemId ? (
+							<>
+								<Button
+									type='button'
+									variant='outline'
+									onClick={(e) => {
+										e.preventDefault();
+										clear();
+									}}
+								>
+									Clear
+								</Button>
+								<DeleteDialog
+									isOpen={deleteOpen}
+									onOpenChange={setDeleteOpen}
+									itemId={itemId}
+									collectionPath={collectionPath}
+									onDelete={clear}
+								/>
+							</>
+						) : null}
+					</CardFooter>
+				) : null}
 			</Card>
 		</div>
 	);
