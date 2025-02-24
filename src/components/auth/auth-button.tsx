@@ -21,6 +21,7 @@ import {
 import { useAuth } from '@/store/auth';
 import { useEffect, useState } from 'react';
 import { auth } from '@/lib/firebase';
+import { toast } from 'sonner';
 
 export default function AuthButton() {
 	const { user, setUser } = useAuth();
@@ -44,6 +45,7 @@ export default function AuthButton() {
 
 	const logOut = async () => {
 		await signOut(auth);
+		toast('Logged out');
 	};
 
 	useEffect(() => {

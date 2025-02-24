@@ -2,7 +2,18 @@
 
 import Back from '@/components/back';
 import SpeedCell from '@/components/calculators/speed-cell';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import DeleteDialog from '@/components/dialogs/DeleteDialog';
+import LoadDialog from '@/components/dialogs/LoadDialog';
+import SaveDialog from '@/components/dialogs/SaveDialog';
+import { Button } from '@/components/ui/button';
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -14,9 +25,45 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
+import { useFirestoreItems } from '@/hooks/firestore';
 import { useNumber } from '@/hooks/number';
 import { calculateTireCircumference, generateRPMColumns } from '@/lib/number';
-import { useMemo } from 'react';
+import { yup } from '@/lib/yup';
+import { useAuth } from '@/store/auth';
+import { useCallback, useMemo, useState } from 'react';
+
+const validator = yup.object({
+	primaryDriveRatio: yup.number().required().min(1),
+	tireWidth: yup.number().required().min(1),
+	tireAspectRatio: yup.number().required().min(1),
+	maximumRPM: yup.number().required().min(1),
+	frontSprocket: yup.number().required().min(1),
+	rearSprocket: yup.number().required().min(1),
+	rimSize: yup.number().required().min(1),
+	firstGearFront: yup.number().required().min(1),
+	firstGearRear: yup.number().required().min(1),
+	secondGearFront: yup.number().required().min(1),
+	secondGearRear: yup.number().required().min(1),
+	thirdGearFront: yup.number().required().min(1),
+	thirdGearRear: yup.number().required().min(1),
+	fourthGearFront: yup.number().required().min(1),
+	fourthGearRear: yup.number().required().min(1),
+	fifthGearFront: yup.number().required().min(1),
+	fifthGearRear: yup.number().required().min(1),
+	sixthGearFront: yup.number().required().min(1),
+	sixthGearRear: yup.number().required().min(1),
+});
+
+const itemValidator = yup
+	.array(
+		validator.concat(
+			yup.object({
+				id: yup.string().required(),
+				name: yup.string().required(),
+			})
+		)
+	)
+	.required();
 
 export default function TopSpeed() {
 	const [primaryDriveRatio, setPrimaryDriveRatio] = useNumber();
@@ -38,6 +85,139 @@ export default function TopSpeed() {
 	const [fifthGearRear, setFifthGearRear] = useNumber();
 	const [sixthGearFront, setSixthGearFront] = useNumber();
 	const [sixthGearRear, setSixthGearRear] = useNumber();
+	const user = useAuth((state) => state.user);
+	const [saveOpen, setSaveOpen] = useState(false);
+	const [loadOpen, setLoadOpen] = useState(false);
+	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [itemId, setItemId] = useState<string | null>(null);
+
+	const collectionPath = `users/${user?.id}/top-speed`;
+
+	const { items } = useFirestoreItems(collectionPath, itemValidator.validate.bind(itemValidator));
+
+	const clear = () => {
+		setPrimaryDriveRatio(0);
+		setTireWidth(0);
+		setTireAspectRatio(0);
+		setMaximumRPM(0);
+		setFrontSprocket(0);
+		setRearSprocket(0);
+		setRimSize(0);
+		setFirstGearFront(0);
+		setFirstGearRear(0);
+		setSecondGearFront(0);
+		setSecondGearRear(0);
+		setThirdGearFront(0);
+		setThirdGearRear(0);
+		setFourthGearFront(0);
+		setFourthGearRear(0);
+		setFifthGearFront(0);
+		setFifthGearRear(0);
+		setSixthGearFront(0);
+		setSixthGearRear(0);
+		setItemId(null);
+	};
+
+	const load = useCallback(
+		(loadItemId: string) => {
+			const item = items.find((item) => item.id === loadItemId);
+
+			if (!item) {
+				return;
+			}
+
+			setPrimaryDriveRatio(item.primaryDriveRatio);
+			setTireWidth(item.tireWidth);
+			setTireAspectRatio(item.tireAspectRatio);
+			setMaximumRPM(item.maximumRPM);
+			setFrontSprocket(item.frontSprocket);
+			setRearSprocket(item.rearSprocket);
+			setRimSize(item.rimSize);
+			setFirstGearFront(item.firstGearFront);
+			setFirstGearRear(item.firstGearRear);
+			setSecondGearFront(item.secondGearFront);
+			setSecondGearRear(item.secondGearRear);
+			setThirdGearFront(item.thirdGearFront);
+			setThirdGearRear(item.thirdGearRear);
+			setFourthGearFront(item.fourthGearFront);
+			setFourthGearRear(item.fourthGearRear);
+			setFifthGearFront(item.fifthGearFront);
+			setFifthGearRear(item.fifthGearRear);
+			setSixthGearFront(item.sixthGearFront);
+			setSixthGearRear(item.sixthGearRear);
+
+			setLoadOpen(false);
+			setDeleteOpen(false);
+			setItemId(item.id);
+		},
+		[
+			items,
+			setPrimaryDriveRatio,
+			setTireWidth,
+			setTireAspectRatio,
+			setMaximumRPM,
+			setFrontSprocket,
+			setRearSprocket,
+			setRimSize,
+			setFirstGearFront,
+			setFirstGearRear,
+			setSecondGearFront,
+			setSecondGearRear,
+			setThirdGearFront,
+			setThirdGearRear,
+			setFourthGearFront,
+			setFourthGearRear,
+			setFifthGearFront,
+			setFifthGearRear,
+			setSixthGearFront,
+			setSixthGearRear,
+		]
+	);
+
+	const data = useMemo(
+		() => ({
+			primaryDriveRatio,
+			tireWidth,
+			tireAspectRatio,
+			maximumRPM,
+			frontSprocket,
+			rearSprocket,
+			rimSize,
+			firstGearFront,
+			firstGearRear,
+			secondGearFront,
+			secondGearRear,
+			thirdGearFront,
+			thirdGearRear,
+			fourthGearFront,
+			fourthGearRear,
+			fifthGearFront,
+			fifthGearRear,
+			sixthGearFront,
+			sixthGearRear,
+		}),
+		[
+			primaryDriveRatio,
+			tireWidth,
+			tireAspectRatio,
+			maximumRPM,
+			frontSprocket,
+			rearSprocket,
+			rimSize,
+			firstGearFront,
+			firstGearRear,
+			secondGearFront,
+			secondGearRear,
+			thirdGearFront,
+			thirdGearRear,
+			fourthGearFront,
+			fourthGearRear,
+			fifthGearFront,
+			fifthGearRear,
+			sixthGearFront,
+			sixthGearRear,
+		]
+	);
 
 	const gearings = useMemo(
 		() => [
@@ -332,6 +512,40 @@ export default function TopSpeed() {
 						</div>
 					</div>
 				</CardContent>
+				{user ? (
+					<CardFooter className='flex gap-1'>
+						<SaveDialog
+							isOpen={saveOpen}
+							onOpenChange={setSaveOpen}
+							data={data}
+							itemId={itemId}
+							collectionPath={collectionPath}
+							isValid={validator.isValidSync(data)}
+						/>
+						<LoadDialog isOpen={loadOpen} onOpenChange={setLoadOpen} items={items} onLoad={load} />
+						{itemId ? (
+							<>
+								<Button
+									type='button'
+									variant='outline'
+									onClick={(e) => {
+										e.preventDefault();
+										clear();
+									}}
+								>
+									Clear
+								</Button>
+								<DeleteDialog
+									isOpen={deleteOpen}
+									onOpenChange={setDeleteOpen}
+									itemId={itemId}
+									collectionPath={collectionPath}
+									onDelete={clear}
+								/>
+							</>
+						) : null}
+					</CardFooter>
+				) : null}
 			</Card>
 		</div>
 	);

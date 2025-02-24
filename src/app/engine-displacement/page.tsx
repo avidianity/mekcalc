@@ -1,17 +1,91 @@
 'use client';
 
 import Back from '@/components/back';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import NumberInput from '@/components/base/inputs/number-input';
+import DeleteDialog from '@/components/dialogs/DeleteDialog';
+import LoadDialog from '@/components/dialogs/LoadDialog';
+import SaveDialog from '@/components/dialogs/SaveDialog';
+import { Button } from '@/components/ui/button';
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card';
+import { useFirestoreItems } from '@/hooks/firestore';
 import { useNumber } from '@/hooks/number';
 import { calculateDisplacement } from '@/lib/number';
-import { useMemo } from 'react';
+import { yup } from '@/lib/yup';
+import { useAuth } from '@/store/auth';
+import { useCallback, useMemo, useState } from 'react';
+
+const validator = yup.object({
+	cylinders: yup.number().required().min(1),
+	bore: yup.number().required().min(1),
+	stroke: yup.number().required().min(1),
+});
+
+const itemValidator = yup
+	.array(
+		validator.concat(
+			yup.object({
+				id: yup.string().required(),
+				name: yup.string().required(),
+			})
+		)
+	)
+	.required();
 
 export default function EngineDisplacement() {
 	const [cylinders, setCylinders] = useNumber(1);
 	const [bore, setBore] = useNumber();
 	const [stroke, setStroke] = useNumber();
+	const user = useAuth((state) => state.user);
+	const [saveOpen, setSaveOpen] = useState(false);
+	const [loadOpen, setLoadOpen] = useState(false);
+	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [itemId, setItemId] = useState<string | null>(null);
+
+	const collectionPath = `users/${user?.id}/engine-displacement`;
+
+	const { items } = useFirestoreItems(collectionPath, itemValidator.validate.bind(itemValidator));
+
+	const clear = () => {
+		setCylinders(0);
+		setBore(0);
+		setStroke(0);
+		setItemId(null);
+	};
+
+	const load = useCallback(
+		(loadItemId: string) => {
+			const item = items.find((item) => item.id === loadItemId);
+
+			if (!item) {
+				return;
+			}
+
+			setCylinders(item.cylinders);
+			setBore(item.bore);
+			setStroke(item.stroke);
+
+			setLoadOpen(false);
+			setDeleteOpen(false);
+			setItemId(item.id);
+		},
+		[items, setCylinders, setBore, setStroke]
+	);
+
+	const data = useMemo(
+		() => ({
+			cylinders,
+			bore,
+			stroke,
+		}),
+		[cylinders, bore, stroke]
+	);
 
 	const displacement = useMemo(
 		() => calculateDisplacement(bore, stroke, cylinders),
@@ -32,38 +106,55 @@ export default function EngineDisplacement() {
 				</CardHeader>
 				<CardContent>
 					<div className='grid w-full items-center gap-4'>
-						<div className='flex flex-col space-y-1.5'>
-							<Label htmlFor='cylinders'>Cylinders</Label>
-							<Input
-								id='cylinders'
-								type='number'
-								placeholder='Cylinders'
-								onChange={(e) => setCylinders(e.target.valueAsNumber)}
-								value={cylinders > 0 ? cylinders : ''}
-							/>
-						</div>
-						<div className='flex flex-col space-y-1.5'>
-							<Label htmlFor='bore'>Bore (mm)</Label>
-							<Input
-								id='bore'
-								type='number'
-								placeholder='Bore (mm)'
-								onChange={(e) => setBore(e.target.valueAsNumber)}
-								value={bore > 0 ? bore : ''}
-							/>
-						</div>
-						<div className='flex flex-col space-y-1.5'>
-							<Label htmlFor='stroke'>Stroke (mm)</Label>
-							<Input
-								id='stroke'
-								type='number'
-								placeholder='Stroke (mm)'
-								onChange={(e) => setStroke(e.target.valueAsNumber)}
-								value={stroke > 0 ? stroke : ''}
-							/>
-						</div>
+						<NumberInput
+							id='cylinders'
+							placeholder='Cylinders'
+							onChange={setCylinders}
+							value={cylinders}
+						/>
+						<NumberInput id='bore' placeholder='Bore (mm)' onChange={setBore} value={bore} />
+						<NumberInput
+							id='stroke'
+							placeholder='Stroke (mm)'
+							onChange={setStroke}
+							value={stroke}
+						/>
 					</div>
 				</CardContent>
+				{user ? (
+					<CardFooter className='flex gap-1'>
+						<SaveDialog
+							isOpen={saveOpen}
+							onOpenChange={setSaveOpen}
+							data={data}
+							itemId={itemId}
+							collectionPath={collectionPath}
+							isValid={validator.isValidSync(data)}
+						/>
+						<LoadDialog isOpen={loadOpen} onOpenChange={setLoadOpen} items={items} onLoad={load} />
+						{itemId ? (
+							<>
+								<Button
+									type='button'
+									variant='outline'
+									onClick={(e) => {
+										e.preventDefault();
+										clear();
+									}}
+								>
+									Clear
+								</Button>
+								<DeleteDialog
+									isOpen={deleteOpen}
+									onOpenChange={setDeleteOpen}
+									itemId={itemId}
+									collectionPath={collectionPath}
+									onDelete={clear}
+								/>
+							</>
+						) : null}
+					</CardFooter>
+				) : null}
 			</Card>
 		</div>
 	);

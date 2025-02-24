@@ -1,6 +1,7 @@
 'use client';
 
 import Back from '@/components/back';
+import NumberInput from '@/components/base/inputs/number-input';
 import DeleteDialog from '@/components/dialogs/DeleteDialog';
 import LoadDialog from '@/components/dialogs/LoadDialog';
 import SaveDialog from '@/components/dialogs/SaveDialog';
@@ -13,8 +14,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useFirestoreItems } from '@/hooks/firestore';
 import { useNumber } from '@/hooks/number';
 import {
@@ -109,14 +108,14 @@ export default function Dynamic() {
 	);
 
 	const staticRatio = useMemo(() => {
-		const result = calculateStaticCompressionRatio(displacement, unsweptVolume);
+		const result = calculateStaticCompressionRatio(displacement / cylinders, unsweptVolume);
 
 		if (!isFinite(result)) {
 			return 0;
 		}
 
 		return result;
-	}, [displacement, unsweptVolume]);
+	}, [displacement, unsweptVolume, cylinders]);
 
 	const dynamicRatio = useMemo(
 		() => calculateDynamicCompressionRatio(bore, stroke, unsweptVolume, ivcAngle),
@@ -145,56 +144,31 @@ export default function Dynamic() {
 				</CardHeader>
 				<CardContent>
 					<div className='grid w-full items-center gap-4'>
-						<div className='flex flex-col space-y-1.5'>
-							<Label htmlFor='cylinders'>Cylinders</Label>
-							<Input
-								id='cylinders'
-								type='number'
-								placeholder='Cylinders'
-								onChange={(e) => setCylinders(e.target.valueAsNumber)}
-								value={cylinders > 0 ? cylinders : ''}
-							/>
-						</div>
-						<div className='flex flex-col space-y-1.5'>
-							<Label htmlFor='bore'>Bore (mm)</Label>
-							<Input
-								id='bore'
-								type='number'
-								placeholder='Bore (mm)'
-								onChange={(e) => setBore(e.target.valueAsNumber)}
-								value={bore > 0 ? bore : ''}
-							/>
-						</div>
-						<div className='flex flex-col space-y-1.5'>
-							<Label htmlFor='stroke'>Stroke (mm)</Label>
-							<Input
-								id='stroke'
-								type='number'
-								placeholder='Stroke (mm)'
-								onChange={(e) => setStroke(e.target.valueAsNumber)}
-								value={stroke > 0 ? stroke : ''}
-							/>
-						</div>
-						<div className='flex flex-col space-y-1.5'>
-							<Label htmlFor='unsweptVolume'>Unswept Volume (cc)</Label>
-							<Input
-								id='unsweptVolume'
-								type='number'
-								placeholder='Unswept Volume (cc)'
-								onChange={(e) => setUnsweptVolume(e.target.valueAsNumber)}
-								value={unsweptVolume > 0 ? unsweptVolume : ''}
-							/>
-						</div>
-						<div className='flex flex-col space-y-1.5'>
-							<Label htmlFor='ivcAngle'>Intake Valve Closing Degree (°)</Label>
-							<Input
-								id='ivcAngle'
-								type='number'
-								placeholder='Intake Valve Closing Degree (°)'
-								onChange={(e) => setIvcAngle(e.target.valueAsNumber)}
-								value={ivcAngle > 0 ? ivcAngle : ''}
-							/>
-						</div>
+						<NumberInput
+							id='cylinders'
+							placeholder='Cylinders'
+							onChange={setCylinders}
+							value={cylinders}
+						/>
+						<NumberInput id='bore' placeholder='Bore (mm)' onChange={setBore} value={bore} />
+						<NumberInput
+							id='stroke'
+							placeholder='Stroke (mm)'
+							onChange={setStroke}
+							value={stroke}
+						/>
+						<NumberInput
+							id='unsweptVolume'
+							placeholder='Unswept Volume (cc)'
+							onChange={setUnsweptVolume}
+							value={unsweptVolume}
+						/>
+						<NumberInput
+							id='ivcAngle'
+							placeholder='Intake Valve Closing Degree (°)'
+							onChange={setIvcAngle}
+							value={ivcAngle}
+						/>
 					</div>
 				</CardContent>
 				{user ? (
