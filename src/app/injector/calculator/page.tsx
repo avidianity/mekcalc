@@ -42,7 +42,7 @@ const itemValidator = yup
 export default function Calculator() {
 	const [hp, setHp] = useNumber();
 	const [injectors, setInjectors] = useNumber();
-	const [maxIDC, setMaxIDC] = useState(80);
+	const [maxIDC, setMaxIDC] = useState<number | null>(80);
 	const user = useAuth((state) => state.user);
 	const [saveOpen, setSaveOpen] = useState(false);
 	const [loadOpen, setLoadOpen] = useState(false);
@@ -89,7 +89,7 @@ export default function Calculator() {
 	);
 
 	const result = useMemo(
-		() => calculateInjectorSize(hp, injectors, maxIDC / 100),
+		() => calculateInjectorSize(hp, injectors, (maxIDC ?? 80) / 100),
 		[hp, injectors, maxIDC]
 	);
 

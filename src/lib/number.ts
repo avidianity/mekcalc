@@ -181,7 +181,7 @@ export function calculateInjectorSize(
 	const fuelMultiplier = 10.5; // Conversion factor
 	const result = (hp * bsfc * fuelMultiplier) / (numInjectors * maxIDC);
 
-	if (isNaN(result)) {
+	if (isNaN(result) || result === Infinity) {
 		return 0;
 	}
 

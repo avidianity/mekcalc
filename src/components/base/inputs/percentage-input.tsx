@@ -3,8 +3,8 @@ import { Label } from '@/components/ui/label';
 import { ComponentProps } from 'react';
 
 interface Props extends Omit<ComponentProps<'input'>, 'onChange' | 'value' | 'type'> {
-	value?: number;
-	onChange?: (value: number | undefined) => void;
+	value?: number | null;
+	onChange?: (value: number | null) => void;
 }
 
 export default function PercentageInput({ value, onChange, id, placeholder, ...props }: Props) {
@@ -18,7 +18,7 @@ export default function PercentageInput({ value, onChange, id, placeholder, ...p
 				onChange={(e) => {
 					const num = e.target.valueAsNumber;
 					if (e.target.value === '') {
-						onChange?.(undefined); // Allow clearing input
+						onChange?.(null); // Allow clearing input
 					} else if (!isNaN(num) && num >= 0 && num <= 100) {
 						onChange?.(num);
 					}
