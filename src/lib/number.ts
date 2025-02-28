@@ -163,3 +163,27 @@ export function generateRPMColumns(maximumRPM: number): number[] {
 
 	return rpmColumn;
 }
+
+/**
+ * Calculates the required injector size in cc/min per injector.
+ * @param hp - Target horsepower.
+ * @param numInjectors - Number of injectors.
+ * @param bsfc - Brake Specific Fuel Consumption (default: 0.5 for NA engines).
+ * @param maxIDC - Maximum Injector Duty Cycle (default: 80% or 0.8).
+ * @returns Required injector size per injector in cc/min.
+ */
+export function calculateInjectorSize(
+	hp: number,
+	numInjectors: number,
+	maxIDC = 0.8,
+	bsfc = 0.5
+): number {
+	const fuelMultiplier = 10.5; // Conversion factor
+	const result = (hp * bsfc * fuelMultiplier) / (numInjectors * maxIDC);
+
+	if (isNaN(result)) {
+		return 0;
+	}
+
+	return result;
+}
