@@ -187,3 +187,54 @@ export function calculateInjectorSize(
 
 	return result;
 }
+
+/**
+ * Calculates mean and maximum piston speed.
+ * @param stroke Stroke length in mm.
+ * @param rpm Engine RPM.
+ * @returns Object with mean and max piston speed in m/s.
+ */
+export function calculatePistonSpeed(stroke: number, rpm: number) {
+	const strokeMeters = stroke / 1000; // Convert mm to meters
+
+	const meanSpeed = (2 * strokeMeters * rpm) / 60; // Mean piston speed (m/s)
+	const maxSpeed = (Math.PI * strokeMeters * rpm) / 60; // Max piston speed (m/s)
+
+	return {
+		meanSpeed: Number(meanSpeed.toFixed(2)),
+		maxSpeed: Number(maxSpeed.toFixed(2)),
+	};
+}
+
+/**
+ * Calculates the safest RPM limit based on stroke length and connecting rod length using piston acceleration theory.
+ * @param stroke Stroke length in mm.
+ * @param rodLength Connecting rod length in mm.
+ * @param maxAcceleration Max piston acceleration limit (default 4500g for performance engines).
+ * @returns Safe RPM limit.
+ */
+export function calculateSafeRPM(
+	stroke: number,
+	rodLength: number,
+	maxAcceleration: number = 4500
+): number {
+	if (stroke <= 0 || rodLength <= 0) {
+		return 0;
+	}
+
+	const rodRatio = rodLength / stroke;
+	const g = 9.81; // Gravity in m/s²
+
+	// Convert g-force limit to m/s²
+	const accelerationLimit = maxAcceleration * g;
+
+	// Convert stroke to meters
+	const strokeMeters = stroke / 1000;
+
+	// Safe RPM calculation using piston acceleration theory
+	const safeRPM = Math.sqrt(
+		(accelerationLimit * 60 ** 2) / (Math.PI ** 2 * strokeMeters * (1 + 1 / rodRatio))
+	);
+
+	return Math.floor(safeRPM);
+}

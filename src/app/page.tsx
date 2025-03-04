@@ -1,6 +1,6 @@
 import Menu from '@/components/menu';
 import { Button } from '@/components/ui/button';
-import { Circle, Cog, Cylinder, Gauge, Omega, Syringe } from 'lucide-react';
+import { ChevronsUp, Circle, Cog, Cylinder, Gauge, Omega, Syringe } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -40,6 +40,12 @@ export default function Home() {
 				<Link href='/injector'>
 					<Syringe />
 					Injector
+				</Link>
+			</Button>
+			<Button type='button' className='flex items-center gap-1 w-56' asChild>
+				<Link href='/piston-speed'>
+					<ChevronsUp />
+					Piston Speed
 				</Link>
 			</Button>
 		</Menu>

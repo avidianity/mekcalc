@@ -2,7 +2,6 @@
 
 import Back from '@/components/back';
 import NumberInput from '@/components/base/inputs/number-input';
-import PercentageInput from '@/components/base/inputs/percentage-input';
 import DeleteDialog from '@/components/dialogs/DeleteDialog';
 import LoadDialog from '@/components/dialogs/LoadDialog';
 import SaveDialog from '@/components/dialogs/SaveDialog';
@@ -17,15 +16,15 @@ import {
 } from '@/components/ui/card';
 import { useFirestoreItems } from '@/hooks/firestore';
 import { useNumber } from '@/hooks/number';
-import { calculateInjectorSize } from '@/lib/number';
+import { calculatePistonSpeed, calculateSafeRPM } from '@/lib/number';
 import { yup } from '@/lib/yup';
 import { useAuth } from '@/store/auth';
 import { useCallback, useMemo, useState } from 'react';
 
 const validator = yup.object({
-	hp: yup.number().required().min(1),
-	injectors: yup.number().required().min(1),
-	maxIDC: yup.number().required().min(1),
+	stroke: yup.number().required().min(1),
+	rpm: yup.number().required().min(1),
+	rodLength: yup.number().required().min(1),
 });
 
 const itemValidator = yup
@@ -40,23 +39,22 @@ const itemValidator = yup
 	.required();
 
 export default function Calculator() {
-	const [hp, setHp] = useNumber();
-	const [injectors, setInjectors] = useNumber();
-	const [maxIDC, setMaxIDC] = useState<number | null>(80);
+	const [stroke, setStroke] = useNumber();
+	const [rpm, setRPM] = useNumber();
+	const [rodLength, setRodLength] = useNumber();
 	const user = useAuth((state) => state.user);
 	const [saveOpen, setSaveOpen] = useState(false);
 	const [loadOpen, setLoadOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [itemId, setItemId] = useState<string | null>(null);
 
-	const collectionPath = `users/${user?.id}/injector-calculator`;
+	const collectionPath = `users/${user?.id}/piston-speed`;
 
 	const { items } = useFirestoreItems(collectionPath, itemValidator.validate.bind(itemValidator));
 
 	const clear = () => {
-		setHp(0);
-		setInjectors(0);
-		setMaxIDC(80);
+		setStroke(0);
+		setRPM(0);
 		setItemId(null);
 	};
 
@@ -68,58 +66,53 @@ export default function Calculator() {
 				return;
 			}
 
-			setHp(item.hp);
-			setInjectors(item.injectors);
-			setMaxIDC(item.maxIDC);
+			setStroke(item.stroke);
+			setRPM(item.rpm);
+			setRodLength(item.rodLength);
 
 			setLoadOpen(false);
 			setDeleteOpen(false);
 			setItemId(item.id);
 		},
-		[items, setHp, setInjectors, setMaxIDC]
+		[items, setStroke, setRPM, setRodLength]
 	);
 
 	const data = useMemo(
 		() => ({
-			hp,
-			injectors,
-			maxIDC,
+			stroke,
+			rpm,
+			rodLength,
 		}),
-		[hp, injectors, maxIDC]
+		[stroke, rpm, rodLength]
 	);
 
-	const result = useMemo(
-		() => calculateInjectorSize(hp, injectors, (maxIDC ?? 80) / 100),
-		[hp, injectors, maxIDC]
-	);
+	const speeds = useMemo(() => calculatePistonSpeed(stroke, rpm), [stroke, rpm]);
+	const safeSpeed = useMemo(() => calculateSafeRPM(stroke, rodLength), [stroke, rodLength]);
 
 	return (
 		<div className='h-full w-full flex items-center justify-center'>
 			<Card className='w-[350px]'>
 				<CardHeader>
 					<CardTitle className='flex items-center'>
-						Calculator
-						<Back href='/injector' iconOnly className='ml-auto' />
+						Piston Speed
+						<Back href='/' iconOnly className='ml-auto' />
 					</CardTitle>
 					<CardDescription className='flex flex-col'>
-						<span>Result: {result.toFixed(0)}cc/min</span>
+						<span>Mean Speed: {speeds.meanSpeed}m/s</span>
+						<span>Max Speed: {speeds.maxSpeed}m/s</span>
+						<span>Safe RPM: {safeSpeed}rpm</span>
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className='grid w-full items-center gap-4'>
-						<NumberInput id='hp' placeholder='Target Horsepower' onChange={setHp} value={hp} />
+						<NumberInput id='stroke' placeholder='Stroke' onChange={setStroke} value={stroke} />
 						<NumberInput
-							id='injectors'
-							placeholder='No. of Injectors'
-							onChange={setInjectors}
-							value={injectors}
+							id='rodLength'
+							placeholder='Connecting Rod Length (mm)'
+							onChange={setRodLength}
+							value={rodLength}
 						/>
-						<PercentageInput
-							id='maxIDC'
-							placeholder='Max Injector Duty Cycle (Default: 80%)'
-							onChange={setMaxIDC}
-							value={maxIDC}
-						/>
+						<NumberInput id='rpm' placeholder='RPM' onChange={setRPM} value={rpm} />
 					</div>
 				</CardContent>
 				{user ? (
