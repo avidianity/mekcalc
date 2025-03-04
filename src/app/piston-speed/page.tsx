@@ -38,7 +38,7 @@ const itemValidator = yup
 	)
 	.required();
 
-export default function Calculator() {
+export default function PistonSpeed() {
 	const [stroke, setStroke] = useNumber();
 	const [rpm, setRPM] = useNumber();
 	const [rodLength, setRodLength] = useNumber();
