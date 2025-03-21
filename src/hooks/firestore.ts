@@ -55,7 +55,6 @@ export function useFirestoreItems<T>(
 	}, [table]);
 
 	useEffect(() => {
-		console.log('fetchItems', user);
 		fetchItems();
 	}, [table]);
 
