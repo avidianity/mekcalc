@@ -59,7 +59,11 @@ export default function Dynamic() {
 
 	const collectionPath = `users/${user?.id}/dynamic-compression-ratio`;
 
-	const { items } = useFirestoreItems(collectionPath, itemValidator.validate.bind(itemValidator));
+	const { items } = useFirestoreItems(
+		user,
+		'dynamic-compression-ratio',
+		itemValidator.validate.bind(itemValidator)
+	);
 
 	const clear = () => {
 		setCylinders(1);

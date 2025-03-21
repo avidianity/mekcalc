@@ -93,7 +93,11 @@ export default function TopSpeed() {
 
 	const collectionPath = `users/${user?.id}/top-speed`;
 
-	const { items } = useFirestoreItems(collectionPath, itemValidator.validate.bind(itemValidator));
+	const { items } = useFirestoreItems(
+		user,
+		'top-speed',
+		itemValidator.validate.bind(itemValidator)
+	);
 
 	const clear = () => {
 		setPrimaryDriveRatio(0);

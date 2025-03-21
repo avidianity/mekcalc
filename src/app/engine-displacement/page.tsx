@@ -50,7 +50,11 @@ export default function EngineDisplacement() {
 
 	const collectionPath = `users/${user?.id}/engine-displacement`;
 
-	const { items } = useFirestoreItems(collectionPath, itemValidator.validate.bind(itemValidator));
+	const { items } = useFirestoreItems(
+		user,
+		'engine-displacement',
+		itemValidator.validate.bind(itemValidator)
+	);
 
 	const clear = () => {
 		setCylinders(0);

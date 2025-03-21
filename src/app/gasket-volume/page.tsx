@@ -48,7 +48,11 @@ export default function GasketVolume() {
 
 	const collectionPath = `users/${user?.id}/gasket-volume`;
 
-	const { items } = useFirestoreItems(collectionPath, itemValidator.validate.bind(itemValidator));
+	const { items } = useFirestoreItems(
+		user,
+		'gasket-volume',
+		itemValidator.validate.bind(itemValidator)
+	);
 
 	const clear = () => {
 		setBore(0);

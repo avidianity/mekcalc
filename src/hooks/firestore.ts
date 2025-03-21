@@ -4,6 +4,7 @@
 import { useEffect, useCallback, useState, useMemo } from 'react';
 import { collection, getDocs, query, onSnapshot } from 'firebase/firestore';
 import { database } from '@/lib/firebase';
+import { User } from '@/types/user';
 
 /**
  * A custom hook to manage Firestore items with validation
@@ -13,11 +14,15 @@ import { database } from '@/lib/firebase';
  * @returns An object containing items and fetchItems function
  */
 export function useFirestoreItems<T>(
+	user: User | null,
 	collectionPath: string,
 	validator: (data: unknown) => Promise<T[]> | T[]
 ) {
 	const [items, setItems] = useState<T[]>([]);
-	const table = useMemo(() => collection(database, collectionPath), [collectionPath]);
+	const table = useMemo(
+		() => collection(database, `users/${user?.id}/${collectionPath}`),
+		[collectionPath, user]
+	);
 
 	const fetchItems = useCallback(async () => {
 		try {
@@ -32,7 +37,7 @@ export function useFirestoreItems<T>(
 		} catch (error) {
 			console.error(error);
 		}
-	}, []);
+	}, [table]);
 
 	useEffect(() => {
 		const unsubscribe = onSnapshot(table, async (snapshot) => {
@@ -47,11 +52,12 @@ export function useFirestoreItems<T>(
 		return () => {
 			unsubscribe();
 		};
-	}, []);
+	}, [table]);
 
 	useEffect(() => {
+		console.log('fetchItems', user);
 		fetchItems();
-	}, []);
+	}, [table]);
 
 	return { items, fetchItems };
 }

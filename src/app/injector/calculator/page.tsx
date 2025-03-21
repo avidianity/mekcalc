@@ -51,7 +51,11 @@ export default function Calculator() {
 
 	const collectionPath = `users/${user?.id}/injector-calculator`;
 
-	const { items } = useFirestoreItems(collectionPath, itemValidator.validate.bind(itemValidator));
+	const { items } = useFirestoreItems(
+		user,
+		'injector-calculator',
+		itemValidator.validate.bind(itemValidator)
+	);
 
 	const clear = () => {
 		setHp(0);

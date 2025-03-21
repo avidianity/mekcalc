@@ -50,7 +50,11 @@ export default function PistonSpeed() {
 
 	const collectionPath = `users/${user?.id}/piston-speed`;
 
-	const { items } = useFirestoreItems(collectionPath, itemValidator.validate.bind(itemValidator));
+	const { items } = useFirestoreItems(
+		user,
+		'piston-speed',
+		itemValidator.validate.bind(itemValidator)
+	);
 
 	const clear = () => {
 		setStroke(0);

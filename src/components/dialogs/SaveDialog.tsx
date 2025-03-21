@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
 	Dialog,
 	DialogContent,
@@ -45,7 +45,7 @@ export default function SaveDialog<T>({
 		}
 	}, [isOpen]);
 
-	const save = async () => {
+	const save = useCallback(async () => {
 		setSaving(true);
 		try {
 			const saveData = { ...data, name };
@@ -66,7 +66,7 @@ export default function SaveDialog<T>({
 		} finally {
 			setSaving(false);
 		}
-	};
+	}, [collectionPath, data, itemId, name, onOpenChange]);
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onOpenChange}>

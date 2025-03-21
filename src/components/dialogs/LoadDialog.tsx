@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
 	Dialog,
 	DialogContent,
@@ -39,6 +39,11 @@ export default function LoadDialog<T>({
 }: LoadDialogProps<T>) {
 	const [itemIdToLoad, setItemIdToLoad] = useState<string | null>(null);
 
+	const sortedItems = useMemo(
+		() => items.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLocaleLowerCase())),
+		[items]
+	);
+
 	useEffect(() => {
 		if (!isOpen) {
 			setItemIdToLoad(null);
@@ -75,7 +80,7 @@ export default function LoadDialog<T>({
 							<SelectContent>
 								<SelectGroup>
 									<SelectLabel>Name</SelectLabel>
-									{items.map((item, index) => (
+									{sortedItems.map((item, index) => (
 										<SelectItem key={index} value={item.id}>
 											{item.name}
 										</SelectItem>

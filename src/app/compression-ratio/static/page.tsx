@@ -52,7 +52,11 @@ export default function Static() {
 
 	const collectionPath = `users/${user?.id}/static-compression-ratio`;
 
-	const { items } = useFirestoreItems(collectionPath, itemValidator.validate.bind(itemValidator));
+	const { items } = useFirestoreItems(
+		user,
+		'static-compression-ratio',
+		itemValidator.validate.bind(itemValidator)
+	);
 
 	const clear = () => {
 		setCylinders(1);

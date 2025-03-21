@@ -54,7 +54,11 @@ export default function CamshaftTiming() {
 
 	const collectionPath = `users/${user?.id}/camshaft-timing`;
 
-	const { items } = useFirestoreItems(collectionPath, itemValidator.validate.bind(itemValidator));
+	const { items } = useFirestoreItems(
+		user,
+		'camshaft-timing',
+		itemValidator.validate.bind(itemValidator)
+	);
 
 	const clear = () => {
 		setIvo(0);
